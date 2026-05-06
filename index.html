@@ -1014,6 +1014,7 @@
   <div class="view" id="view-scene">
     <div class="view-toolbar">
       <button id="add-scene-var">+ Add variable</button>
+      <button id="sort-scene-var">Sort A→Z</button>
     </div>
     <div id="scene-vars-list" class="vars-scroll"></div>
   </div>
@@ -1682,6 +1683,7 @@ document.getElementById('objects-list').addEventListener('change', e => {
 // Event delegation — scene vars
 // ─────────────────────────────────────────────
 document.getElementById('add-scene-var').addEventListener('click', () => { sceneVars.push(newVar()); renderSceneVars(); });
+document.getElementById('sort-scene-var').addEventListener('click', () => { sceneVars.sort((a, b) => a.k.localeCompare(b.k)); renderSceneVars(); });
 
 document.getElementById('scene-vars-list').addEventListener('click', e => {
   const id = e.target.dataset.delSv;
