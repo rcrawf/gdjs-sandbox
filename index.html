@@ -1364,6 +1364,9 @@ const gdjs = (() => {
       if (list) { const i = list.indexOf(this); if (i !== -1) list.splice(i, 1); }
     }
 
+    getString()      { return this._str ?? ''; }
+    setString(s)     { this._str = String(s); }
+
     toString() { return `[RuntimeObject "${this._name}" x=${this._x} y=${this._y}]`; }
   }
 
@@ -1425,6 +1428,19 @@ const gdjs = (() => {
 
   return { Variable, VariablesContainer, TimeManager, RuntimeObject, RuntimeScene, RuntimeGame };
 })();
+
+// Extend primitives so sandbox code can call .getAsString() / .getAsNumber() /
+// .getAsBoolean() on fn arg values just like on gdjs.Variable, while still
+// supporting direct === comparisons that GDevelop-generated code uses.
+String.prototype.getAsString  = function() { return this.valueOf(); };
+String.prototype.getAsNumber  = function() { return Number(this.valueOf()); };
+String.prototype.getAsBoolean = function() { const v = this.valueOf(); return v !== '' && v !== '0' && v !== 'false'; };
+Number.prototype.getAsString  = function() { return String(this.valueOf()); };
+Number.prototype.getAsNumber  = function() { return this.valueOf(); };
+Number.prototype.getAsBoolean = function() { return this.valueOf() !== 0; };
+Boolean.prototype.getAsString  = function() { return String(this.valueOf()); };
+Boolean.prototype.getAsNumber  = function() { return this.valueOf() ? 1 : 0; };
+Boolean.prototype.getAsBoolean = function() { return this.valueOf(); };
 
 // ─────────────────────────────────────────────
 // App state
@@ -1497,7 +1513,7 @@ const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').repl
 const isContainer = t => t === 'structure' || t === 'array';
 
 function typeSelect(v, extraAttrs) {
-  const labels = { number: '123', string: 'abc', boolean: 'T/F', structure: '{ }', array: '[ ]' };
+  const labels = { number: '123', string: 'abc', boolean: 'T/F', variable: 'var', structure: '{ }', array: '[ ]' };
   const opts = Object.entries(labels).map(([t, label]) =>
     `<option value="${t}" ${v.t === t ? 'selected' : ''}>${label}</option>`
   ).join('');
@@ -1878,19 +1894,22 @@ function run() {
   const _fnArgCache = {};
   const eventsFunctionContext = {
     getArgument(name) {
-      if (_fnArgCache[name]) return _fnArgCache[name];
+      if (name in _fnArgCache) return _fnArgCache[name];
       const arg = fnArgs.find(a => a.k === name);
-      const v = new gdjs.Variable();
-      if (arg) {
-        if (isContainer(arg.t)) {
-          try { seedVariableFromJson(v, JSON.parse(arg.v || (arg.t === 'structure' ? '{}' : '[]'))); } catch {}
-        } else {
-          const val = arg.t === 'number' ? Number(arg.v) : arg.t === 'boolean' ? (arg.v === 'true') : String(arg.v);
-          v._v = val; v._type = arg.t;
-        }
+      let result;
+      if (arg && isContainer(arg.t)) {
+        const v = new gdjs.Variable();
+        try { seedVariableFromJson(v, JSON.parse(arg.v || (arg.t === 'structure' ? '{}' : '[]'))); } catch {}
+        result = v;
+      } else if (arg && arg.t === 'variable') {
+        const v = new gdjs.Variable();
+        v.setValue(isNaN(Number(arg.v)) || arg.v === '' ? arg.v : Number(arg.v));
+        result = v;
+      } else {
+        result = !arg ? '' : arg.t === 'number' ? Number(arg.v) : arg.t === 'boolean' ? (arg.v === 'true') : String(arg.v);
       }
-      _fnArgCache[name] = v;
-      return v;
+      _fnArgCache[name] = result;
+      return result;
     },
     returnValue: new gdjs.Variable(),
   };
@@ -2561,6 +2580,8 @@ interface GdjsRuntimeObject {
   hasBehavior(name: string): boolean;
   getBehavior(name: string): any;
   deleteFromScene(): void;
+  getString(): string;
+  setString(text: string): void;
 }
 
 interface GdjsRuntimeScene {
@@ -2601,7 +2622,7 @@ interface GdjsRuntimeGame {
 
 declare const runtimeScene: GdjsRuntimeScene;
 declare const eventsFunctionContext: {
-  getArgument(name: string): GdjsVariable;
+  getArgument(name: string): string | number | boolean | GdjsVariable;
   returnValue: GdjsVariable;
 };
 declare const gdjs: {
