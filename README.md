@@ -2,7 +2,7 @@
 
 A browser-based sandbox for writing and testing [GDevelop](https://gdevelop.io/) GDJS JavaScript snippets without running a full game.
 
-![Dark theme screenshot placeholder](https://via.placeholder.com/800x450?text=GDJS+Sandbox)
+![GDJS Sandbox screenshot](media/screenshot.png)
 
 ## Why
 

@@ -944,7 +944,7 @@
         </div>
         <div class="console-pane-divider"></div>
         <div class="console-pane" id="console-pane-state">
-          <div class="panel-header">Scene State</div>
+          <div class="panel-header">Scene State <button id="clear-state-btn" style="font-size: 12px;">Clear</button></div>
           <div id="state-out">
             <div class="c-dim">State appears here after run…</div>
           </div>
@@ -1760,9 +1760,13 @@ document.getElementById('fn-args-list').addEventListener('change', e => {
 // Console
 // ─────────────────────────────────────────────
 document.getElementById('clear-btn').addEventListener('click', clearConsole);
+document.getElementById('clear-state-btn').addEventListener('click', clearState);
 
 function clearConsole() {
   document.getElementById('console-out').innerHTML = '';
+}
+
+function clearState() {
   document.getElementById('state-out').innerHTML = '';
 }
 
