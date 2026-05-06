@@ -1,0 +1,2746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GDJS Sandbox</title>
+  <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/loader.js"></script>
+  <style>
+    :root {
+      --bg:             #1e1e1e;
+      --bg2:            #252526;
+      --bg3:            #2d2d2d;
+      --bg4:            #2a2a2a;
+      --bg5:            #1a1a1a;
+      --border:         #3e3e3e;
+      --accent:         #4ec9b0;
+      --accent-hover:   #3db89f;
+      --accent-active:  #2da88f;
+      --accent-bg:      #1c3545;
+      --text:           #cccccc;
+    }
+
+    body[data-theme="dracula"] {
+      --bg:             #282a36;
+      --bg2:            #21222c;
+      --bg3:            #191a21;
+      --bg4:            #2d2f3f;
+      --bg5:            #191a21;
+      --border:         #44475a;
+      --accent:         #bd93f9;
+      --accent-hover:   #a478f7;
+      --accent-active:  #8c5ef5;
+      --accent-bg:      #3a1f5c;
+      --text:           #f8f8f2;
+    }
+
+    body[data-theme="nord"] {
+      --bg:             #2e3440;
+      --bg2:            #3b4252;
+      --bg3:            #252932;
+      --bg4:            #434c5e;
+      --bg5:            #252932;
+      --border:         #4c566a;
+      --accent:         #88c0d0;
+      --accent-hover:   #7ab0c0;
+      --accent-active:  #5e9ab0;
+      --accent-bg:      #1f3545;
+      --text:           #eceff4;
+    }
+
+    body[data-theme="monokai"] {
+      --bg:             #272822;
+      --bg2:            #1e1f1b;
+      --bg3:            #1a1b18;
+      --bg4:            #2d2e28;
+      --bg5:            #1a1b18;
+      --border:         #3e3d32;
+      --accent:         #a6e22e;
+      --accent-hover:   #8fcf22;
+      --accent-active:  #75b018;
+      --accent-bg:      #253318;
+      --text:           #f8f8f2;
+    }
+
+    body[data-theme="solarized"] {
+      --bg:             #fdf6e3;
+      --bg2:            #eee8d5;
+      --bg3:            #ddd6c4;
+      --bg4:            #e8e0ce;
+      --bg5:            #f5efdc;
+      --border:         #cdc7b5;
+      --accent:         #268bd2;
+      --accent-hover:   #1a7ac0;
+      --accent-active:  #0e69af;
+      --accent-bg:      #d0e8f7;
+      --text:           #657b83;
+    }
+
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: #ccc;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      padding: 8px 16px;
+      background: var(--bg3);
+      border-bottom: 1px solid var(--border);
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    header h1 { font-size: 16px; font-weight: 600; color: #fff; }
+    header .hint { font-size: 13px; color: #666; }
+    .spacer { flex: 1; }
+
+    #run-btn {
+      background: var(--accent);
+      color: var(--bg);
+      border: none;
+      padding: 6px 18px;
+      border-radius: 4px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      letter-spacing: 0.2px;
+    }
+    #run-btn:hover { background: var(--accent-hover); }
+    #run-btn:active { background: var(--accent-active); }
+
+    #ai-toggle-btn {
+      background: var(--bg4);
+      color: #9cdcfe;
+      border: 1px solid var(--border);
+      padding: 5px 14px;
+      border-radius: 4px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    #ai-toggle-btn:hover { background: #3a3a3a; }
+    #ai-toggle-btn.active { background: var(--accent-bg); border-color: var(--accent); color: var(--accent); }
+
+    #theme-select {
+      background: var(--bg4);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    #theme-select:focus { outline: none; border-color: var(--accent); }
+
+    .main {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* ── Left Sidebar ── */
+    .sidebar {
+      width: 260px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      padding: 7px 10px;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #858585;
+      flex-shrink: 0;
+    }
+
+    .panel-header button {
+      margin-left: auto;
+      background: #3c3c3c;
+      color: #bbb;
+      border: none;
+      padding: 2px 9px;
+      border-radius: 3px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .panel-header button:hover { background: #4a4a4a; color: #fff; }
+
+    #objects-list {
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .empty-hint {
+      color: #555;
+      font-size: 13px;
+      text-align: center;
+      padding: 16px 12px;
+    }
+
+    .obj-card {
+      border-bottom: 1px solid var(--bg3);
+      font-size: 14px;
+    }
+
+    .obj-card-header {
+      display: flex;
+      align-items: center;
+      padding: 6px 10px;
+      cursor: default;
+      gap: 6px;
+    }
+
+    .obj-label {
+      font-weight: 600;
+      color: #9cdcfe;
+      font-size: 14px;
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .icon-btn {
+      background: none;
+      border: none;
+      color: #555;
+      cursor: pointer;
+      font-size: 17px;
+      line-height: 1;
+      padding: 0 2px;
+      flex-shrink: 0;
+    }
+    .icon-btn:hover { color: #e88; }
+
+    .obj-body { padding: 0 10px 8px; }
+
+    .fields-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px 6px;
+      margin-bottom: 6px;
+    }
+
+    .field { display: flex; flex-direction: column; gap: 2px; }
+
+    .field label {
+      font-size: 11px;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .field input, .var-row input {
+      background: var(--bg4);
+      border: 1px solid var(--border);
+      color: #ccc;
+      padding: 3px 6px;
+      border-radius: 3px;
+      font-size: 14px;
+      width: 100%;
+    }
+
+    .field input:focus, .var-row input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .field.span2 { grid-column: span 2; }
+
+    .vars-header {
+      display: flex;
+      align-items: center;
+      font-size: 11px;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+
+    .vars-header button {
+      margin-left: auto;
+      background: none;
+      border: none;
+      color: #666;
+      cursor: pointer;
+      font-size: 18px;
+      line-height: 1;
+    }
+    .vars-header button:hover { color: var(--accent); }
+
+    .var-row {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 3px;
+      align-items: center;
+    }
+
+    .var-row input.vname { width: 72px; flex-shrink: 0; }
+    .var-row input.vval  { flex: 1; }
+
+    .var-row select.vtype {
+      background: var(--bg4);
+      border: 1px solid var(--border);
+      color: #888;
+      padding: 3px 2px;
+      border-radius: 3px;
+      font-size: 12px;
+      width: 44px;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+    .var-row select.vtype:focus { outline: none; border-color: var(--accent); }
+
+    .var-row-container { flex-direction: column; align-items: stretch; }
+    .var-row-top { display: flex; gap: 4px; align-items: center; }
+
+    .vjson {
+      background: var(--bg4);
+      border: 1px solid var(--border);
+      color: #9cdcfe;
+      padding: 4px 6px;
+      border-radius: 3px;
+      font-size: 12px;
+      font-family: 'Cascadia Code', 'Fira Code', monospace;
+      resize: vertical;
+      min-height: 44px;
+      width: 100%;
+      margin-top: 2px;
+    }
+    .vjson:focus { outline: none; border-color: var(--accent); }
+    .vjson::placeholder { color: #444; }
+
+/* ── Sidebar tabs ── */
+    .tab-bar {
+      display: flex;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .tab-btn {
+      flex: 1;
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: #666;
+      padding: 8px 4px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: -1px;
+    }
+    .tab-btn:hover { color: #999; }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    .tab-pane {
+      display: none;
+      flex-direction: column;
+      flex: 1;
+      overflow: hidden;
+    }
+    .tab-pane.active { display: flex; }
+
+    .tab-toolbar {
+      padding: 6px 10px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .tab-vars {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 10px;
+    }
+
+    .tab-footer {
+      padding: 6px 10px;
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .tab-toolbar button, .tab-footer button,
+    #add-scene-var, #add-global-var, #add-fn-arg {
+      background: var(--bg4);
+      border: 1px dashed #444;
+      color: #777;
+      width: 100%;
+      padding: 5px;
+      border-radius: 3px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .tab-toolbar button:hover, .tab-footer button:hover,
+    #add-scene-var:hover, #add-global-var:hover, #add-fn-arg:hover { color: #ccc; border-color: #666; }
+
+    /* ── Editor + Console ── */
+    .editor-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      min-width: 0;
+    }
+
+    #editor-container { flex: 1; overflow: hidden; min-height: 60px; }
+
+.resize-handle-h {
+      height: 5px;
+      background: var(--bg4);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      cursor: row-resize;
+      flex-shrink: 0;
+      transition: background 0.15s;
+    }
+    .resize-handle-h:hover, .resize-handle-h.dragging { background: var(--accent); }
+
+    .resize-handle-v {
+      width: 5px;
+      background: var(--bg4);
+      border-left: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      cursor: col-resize;
+      flex-shrink: 0;
+      transition: background 0.15s;
+    }
+    .resize-handle-v:hover, .resize-handle-v.dragging { background: var(--accent); }
+
+    .console-panel {
+      height: 190px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: row;
+      background: var(--bg5);
+      min-height: 40px;
+    }
+
+    .console-pane {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    .console-pane-divider {
+      width: 4px;
+      background: var(--bg4);
+      border-left: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .console-panel .panel-header { background: var(--bg); }
+
+    #console-out, #state-out {
+      flex: 1;
+      overflow-y: auto;
+      padding: 6px 12px;
+      font-family: 'Cascadia Code', 'Fira Code', 'Courier New', monospace;
+      font-size: 14px;
+      line-height: 1.65;
+    }
+
+    .c-log   { color: var(--text); }
+    .c-warn  { color: #dcdcaa; }
+    .c-error { color: #f48771; }
+    .c-info  { color: #9cdcfe; }
+    .c-dim   { color: #555; font-size: 13px; }
+
+    .c-tag {
+      display: inline-block;
+      padding: 0 4px;
+      border-radius: 2px;
+      font-size: 11px;
+      font-weight: 700;
+      margin-right: 5px;
+      vertical-align: middle;
+      letter-spacing: 0.5px;
+    }
+    .c-tag-log   { background: var(--bg4); color: #777; }
+    .c-tag-warn  { background: #3a3010; color: #dcdcaa; }
+    .c-tag-error { background: #3a1515; color: #f48771; }
+
+    /* ── AI Panel ── */
+    .ai-panel {
+      width: 0;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      border-left: 0 solid var(--border);
+      overflow: hidden;
+      transition: width 0.15s ease, border-left-width 0s 0.15s;
+      background: var(--bg);
+    }
+
+    .ai-panel.open {
+      width: 480px;
+      border-left-width: 1px;
+      transition: width 0.15s ease;
+    }
+
+    .ai-panel-inner {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .ai-key-section {
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg2);
+      flex-shrink: 0;
+    }
+
+    .ai-mode-row {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 8px;
+    }
+
+    .ai-mode-btn {
+      flex: 1;
+      background: var(--bg4);
+      border: 1px solid var(--border);
+      color: #666;
+      padding: 4px 6px;
+      border-radius: 3px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .ai-mode-btn.active {
+      background: var(--accent-bg);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .ai-key-label {
+      font-size: 11px;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .ai-key-row {
+      display: flex;
+      gap: 6px;
+    }
+
+    .ai-key-row input {
+      flex: 1;
+      background: var(--bg4);
+      border: 1px solid var(--border);
+      color: #ccc;
+      padding: 4px 7px;
+      border-radius: 3px;
+      font-size: 13px;
+      font-family: monospace;
+      min-width: 0;
+    }
+    .ai-key-row input:focus { outline: none; border-color: var(--accent); }
+
+    .ai-key-row button {
+      background: #3c3c3c;
+      border: none;
+      color: #bbb;
+      padding: 4px 10px;
+      border-radius: 3px;
+      font-size: 13px;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .ai-key-row button:hover { background: #4a4a4a; color: #fff; }
+
+    .ai-key-hint {
+      font-size: 11px;
+      color: #444;
+      margin-top: 4px;
+    }
+
+    .ai-key-saved-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--accent);
+    }
+
+    .ai-key-saved-row button {
+      background: none;
+      border: none;
+      color: #555;
+      font-size: 12px;
+      cursor: pointer;
+      text-decoration: underline;
+      padding: 0;
+    }
+    .ai-key-saved-row button:hover { color: #999; }
+
+    .ai-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .ai-intro {
+      font-size: 13px;
+      color: #555;
+      line-height: 1.5;
+    }
+
+    .ai-msg { font-size: 14px; line-height: 1.5; }
+
+    .ai-msg-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      font-weight: 700;
+      margin-bottom: 3px;
+      color: #555;
+    }
+
+    .ai-msg.ai .ai-msg-label { color: var(--accent); }
+
+    .ai-msg.user .ai-msg-body {
+      color: #bbb;
+      background: var(--bg2);
+      padding: 6px 8px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      font-size: 13px;
+      white-space: pre-wrap;
+    }
+
+    .ai-msg.ai .ai-msg-body {
+      color: #9cdcfe;
+      background: #17292e;
+      border: 1px solid #254550;
+      padding: 7px 9px;
+      border-radius: 4px;
+      font-family: 'Cascadia Code', 'Fira Code', 'Courier New', monospace;
+      font-size: 13px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      max-height: 320px;
+      overflow-y: auto;
+    }
+
+    .ai-msg-actions {
+      margin-top: 5px;
+      display: flex;
+      gap: 5px;
+    }
+
+    .ai-msg-actions button {
+      background: var(--bg4);
+      border: 1px solid var(--border);
+      color: #888;
+      padding: 3px 10px;
+      border-radius: 3px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .ai-msg-actions button:hover { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+    .ai-msg-actions button.done { background: #1a3a2a; border-color: #2a6a4a; color: var(--accent); cursor: default; }
+
+    .ai-input-area {
+      padding: 8px 10px;
+      border-top: 1px solid var(--border);
+      background: var(--bg2);
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    #ai-prompt {
+      background: var(--bg4);
+      border: 1px solid var(--border);
+      color: #ccc;
+      padding: 7px 9px;
+      border-radius: 4px;
+      font-size: 14px;
+      font-family: inherit;
+      resize: vertical;
+      min-height: 72px;
+      max-height: 220px;
+      width: 100%;
+    }
+    #ai-prompt:focus { outline: none; border-color: var(--accent); }
+    #ai-prompt::placeholder { color: #444; }
+
+    .ai-send-row {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    #ai-model-select {
+      flex: 1;
+      background: var(--bg4);
+      border: 1px solid var(--border);
+      color: #777;
+      padding: 4px 5px;
+      border-radius: 3px;
+      font-size: 12px;
+      cursor: pointer;
+      min-width: 0;
+    }
+    #ai-model-select:focus { outline: none; }
+
+    #ai-send-btn {
+      background: var(--accent);
+      color: var(--bg);
+      border: none;
+      padding: 5px 16px;
+      border-radius: 4px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    #ai-send-btn:hover { background: var(--accent-hover); }
+    #ai-send-btn:disabled { background: #1f4a40; color: #3a7a68; cursor: not-allowed; }
+
+    .ai-send-hint {
+      font-size: 11px;
+      color: #444;
+      text-align: right;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .ai-auto-insert-label {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      cursor: pointer;
+      color: #555;
+    }
+    .ai-auto-insert-label:hover { color: #888; }
+    #ai-auto-insert { cursor: pointer; accent-color: var(--accent); }
+
+    /* ── Scene picker bar ── */
+    #scene-picker-bar {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      padding: 5px 16px;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+      color: #858585;
+      flex-shrink: 0;
+    }
+
+    #scene-picker-bar strong { color: #ccc; }
+
+    #gd-scene-select {
+      background: var(--bg4);
+      border: 1px solid var(--border);
+      color: #ccc;
+      padding: 3px 6px;
+      border-radius: 3px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    #gd-scene-select:focus { outline: none; border-color: var(--accent); }
+
+    #gd-import-btn {
+      background: #3c3c3c;
+      border: none;
+      color: #bbb;
+      padding: 3px 12px;
+      border-radius: 3px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    #gd-import-btn:hover { background: var(--accent); color: var(--bg); }
+
+    #load-json-btn {
+      background: var(--bg4);
+      color: #858585;
+      border: 1px solid var(--border);
+      padding: 5px 12px;
+      border-radius: 4px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    #load-json-btn:hover { background: #3a3a3a; color: #ccc; }
+
+    #gd-status { color: var(--accent); font-size: 12px; margin-left: 4px; }
+
+    /* ── View tabs ── */
+    .view-tabs {
+      display: flex;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .view-tab {
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: #666;
+      padding: 9px 22px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: -1px;
+      letter-spacing: 0.2px;
+    }
+    .view-tab:hover { color: #ccc; background: var(--bg4); }
+    .view-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    .views-container {
+      flex: 1;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .view { display: none; flex: 1; overflow: hidden; }
+    .view.active { display: flex; }
+    #view-code { flex-direction: row; }
+    #view-objects, #view-scene, #view-global, #view-fnargs { flex-direction: column; }
+
+    /* ── Full-screen view toolbar ── */
+    .view-toolbar {
+      padding: 10px 20px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg2);
+      flex-shrink: 0;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .view-toolbar button {
+      background: #3c3c3c;
+      border: none;
+      color: #ccc;
+      padding: 5px 14px;
+      border-radius: 3px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .view-toolbar button:hover { background: var(--accent); color: var(--bg); }
+
+    /* ── Objects grid ── */
+    .objects-grid {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+      gap: 12px;
+      align-content: start;
+    }
+
+    .objects-grid .empty-hint { grid-column: 1 / -1; }
+
+    .objects-grid .obj-card {
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: var(--bg2);
+    }
+
+    /* ── Vars full-screen ── */
+    .vars-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 20px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .vars-scroll .var-row { width: 100%; box-sizing: border-box; }
+    .vars-scroll .var-row-top { gap: 8px; width: 100%; }
+    .vars-scroll .vname { width: 200px; min-width: 120px; flex-shrink: 0; }
+    .vars-scroll .vval { flex: 1; min-width: 0; }
+    .vars-scroll .vjson { width: 100%; box-sizing: border-box; }
+    .vars-scroll .var-row select.vtype { width: 60px; flex-shrink: 0; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>GDJS Sandbox</h1>
+  <span class="hint">Ctrl+Enter to run</span>
+  <div class="spacer"></div>
+  <select id="theme-select" title="Color theme"></select>
+  <button id="load-json-btn">📂 Load project</button>
+  <input type="file" id="gd-file-input" webkitdirectory style="display:none">
+  <button id="ai-toggle-btn">✦ AI</button>
+  <button id="run-btn">▶  Run</button>
+</header>
+
+<div id="scene-picker-bar">
+  <span>Loaded: <strong id="gd-filename"></strong></span>
+  <span>Scene:</span>
+  <select id="gd-scene-select"></select>
+  <button id="gd-import-btn">Import scene</button>
+  <span id="gd-status"></span>
+</div>
+
+<div class="view-tabs">
+  <button class="view-tab active" data-view="code">Code</button>
+  <button class="view-tab" data-view="objects">Objects</button>
+  <button class="view-tab" data-view="scene">Scene Vars</button>
+  <button class="view-tab" data-view="global">Global Vars</button>
+  <button class="view-tab" data-view="fnargs">Fn Args</button>
+</div>
+
+<div class="views-container">
+
+  <!-- ── Code view ── -->
+  <div class="view active" id="view-code">
+    <div class="editor-col">
+      <div id="editor-container"></div>
+<div class="resize-handle-h" id="console-resize-handle"></div>
+      <div class="console-panel">
+        <div class="console-pane" id="console-pane-log">
+          <div class="panel-header">
+            Console
+            <button id="clear-btn" style="font-size: 12px;">Clear</button>
+          </div>
+          <div id="console-out">
+            <div class="c-dim">Run a snippet to see output…</div>
+          </div>
+        </div>
+        <div class="console-pane-divider"></div>
+        <div class="console-pane" id="console-pane-state">
+          <div class="panel-header">Scene State</div>
+          <div id="state-out">
+            <div class="c-dim">State appears here after run…</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="resize-handle-v" id="ai-resize-handle"></div>
+    <div class="ai-panel" id="ai-panel">
+      <div class="ai-panel-inner">
+        <div class="panel-header">AI Assistant (Claude)</div>
+        <div class="ai-key-section">
+          <div class="ai-mode-row">
+            <button class="ai-mode-btn active" id="ai-mode-proxy">Claude Code (local)</button>
+            <button class="ai-mode-btn" id="ai-mode-api">API Key</button>
+          </div>
+          <div id="ai-proxy-section">
+            <div class="ai-key-hint">Runs <code>claude -p …</code> via proxy.js on port 3001.<br>Start with: <code>node gdjs-sandbox/proxy.js</code></div>
+          </div>
+          <div id="ai-key-section" style="display:none;">
+            <div id="ai-key-entry">
+              <div class="ai-key-row">
+                <input type="password" id="ai-key-input" placeholder="sk-ant-…">
+                <button id="ai-key-save-btn">Save</button>
+              </div>
+              <div class="ai-key-hint">Stored in localStorage</div>
+            </div>
+            <div id="ai-key-saved-row" class="ai-key-saved-row" style="display:none;">
+              ✓ API key saved
+              <button id="ai-key-change-btn">change</button>
+            </div>
+          </div>
+        </div>
+        <div class="ai-messages" id="ai-messages">
+          <div class="ai-intro">Describe what you want to build — Claude will write the GDJS code and insert it into the editor.</div>
+        </div>
+        <div class="ai-input-area">
+          <textarea id="ai-prompt" placeholder="e.g. Move all Enemy objects toward Player, accelerating with distance…"></textarea>
+          <div class="ai-send-row">
+            <select id="ai-model-select">
+              <option value="claude-sonnet-4-6">Sonnet 4.6</option>
+              <option value="claude-opus-4-7">Opus 4.7</option>
+              <option value="claude-haiku-4-5-20251001">Haiku 4.5</option>
+            </select>
+            <button id="ai-send-btn">Generate</button>
+          </div>
+          <div class="ai-send-hint">
+            Ctrl+Enter to send ·
+            <label class="ai-auto-insert-label">
+              <input type="checkbox" id="ai-auto-insert"> auto-insert
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Objects view ── -->
+  <div class="view" id="view-objects">
+    <div class="view-toolbar">
+      <button id="add-obj-btn">+ Add object</button>
+    </div>
+    <div id="objects-list" class="objects-grid"></div>
+  </div>
+
+  <!-- ── Scene vars view ── -->
+  <div class="view" id="view-scene">
+    <div class="view-toolbar">
+      <button id="add-scene-var">+ Add variable</button>
+    </div>
+    <div id="scene-vars-list" class="vars-scroll"></div>
+  </div>
+
+  <!-- ── Global vars view ── -->
+  <div class="view" id="view-global">
+    <div class="view-toolbar">
+      <button id="add-global-var">+ Add variable</button>
+    </div>
+    <div id="global-vars-list" class="vars-scroll"></div>
+  </div>
+
+  <!-- ── Fn Args view ── -->
+  <div class="view" id="view-fnargs">
+    <div class="view-toolbar">
+      <span style="color:#888;font-size:13px;">Arguments passed via <code>eventsFunctionContext.getArgument("name")</code></span>
+      <button id="add-fn-arg">+ Add argument</button>
+    </div>
+    <div id="fn-args-list" class="vars-scroll"></div>
+  </div>
+
+</div>
+
+<script>
+let editor;
+
+// ─────────────────────────────────────────────
+// Theme
+// ─────────────────────────────────────────────
+const THEME_KEY = 'gdjs-sandbox-theme';
+const THEMES = {
+  dark:      { label: 'Dark',      monaco: 'vs-dark'  },
+  dracula:   { label: 'Dracula',   monaco: 'vs-dark'  },
+  nord:      { label: 'Nord',      monaco: 'vs-dark'  },
+  monokai:   { label: 'Monokai',   monaco: 'vs-dark'  },
+  solarized: { label: 'Solarized', monaco: 'vs'       },
+};
+
+const themeSelect = document.getElementById('theme-select');
+Object.entries(THEMES).forEach(([key, { label }]) => {
+  const opt = document.createElement('option');
+  opt.value = key;
+  opt.textContent = label;
+  themeSelect.appendChild(opt);
+});
+
+function applyTheme(key) {
+  document.body.dataset.theme = key === 'dark' ? '' : key;
+  themeSelect.value = key;
+  localStorage.setItem(THEME_KEY, key);
+  if (typeof editor !== 'undefined' && editor) {
+    monaco.editor.setTheme(THEMES[key]?.monaco ?? 'vs-dark');
+  }
+}
+
+themeSelect.addEventListener('change', () => applyTheme(themeSelect.value));
+applyTheme(localStorage.getItem(THEME_KEY) || 'dark');
+
+// ─────────────────────────────────────────────
+// GDJS Mock Runtime
+// ─────────────────────────────────────────────
+const gdjs = (() => {
+
+  class Variable {
+    constructor(value = 0) {
+      this._v    = value;
+      this._type = typeof value === 'boolean' ? 'boolean' : typeof value === 'string' ? 'string' : 'number';
+      this._ch   = {};
+      this._arr  = [];
+    }
+
+    getAsNumber()  { return Number(this._v); }
+    getAsString()  { return String(this._v); }
+    getAsBoolean() {
+      if (typeof this._v === 'boolean') return this._v;
+      return this._v !== 0 && this._v !== '' && this._v !== '0' && this._v !== 'false';
+    }
+    getValue() { return this._v; }
+    getType()  { return this._type; }
+    valueOf()  { return this.getAsNumber(); }
+    toString() { return this.getAsString(); }
+    isPrimitive() { return this._type === 'number' || this._type === 'string' || this._type === 'boolean'; }
+
+    setNumber(n)  { this._v = Number(n);  this._type = 'number'; }
+    setString(s)  { this._v = String(s);  this._type = 'string'; }
+    setBoolean(b) { this._v = Boolean(b); this._type = 'boolean'; }
+    setValue(v) {
+      if (typeof v === 'number')       this.setNumber(v);
+      else if (typeof v === 'boolean') this.setBoolean(v);
+      else                             this.setString(v);
+    }
+
+    add(n) { this._v = Number(this._v) + Number(n); }
+    sub(n) { this._v = Number(this._v) - Number(n); }
+    mul(n) { this._v = Number(this._v) * Number(n); }
+    div(n) { this._v = Number(this._v) / Number(n); }
+
+    concatenateString(s) { this._v = String(this._v) + String(s); }
+
+    toggle() { this._v = !this.getAsBoolean(); this._type = 'boolean'; }
+
+    getChild(nameOrIndex) {
+      return typeof nameOrIndex === 'number'
+        ? this.getChildAt(nameOrIndex)
+        : this.getChildNamed(String(nameOrIndex));
+    }
+    getChildNamed(name) {
+      if (!this._ch[name]) this._ch[name] = new Variable();
+      return this._ch[name];
+    }
+    addChild(name, child) { this._ch[String(name)] = child; return this; }
+    hasChild(name)        { return Object.prototype.hasOwnProperty.call(this._ch, String(name)); }
+    removeChild(name)     { delete this._ch[String(name)]; }
+    getAllChildren()       { return this._ch; }
+
+    getChildAt(index) {
+      while (this._arr.length <= index) this._arr.push(new Variable());
+      return this._arr[index];
+    }
+    getAllChildrenArray() { return [...this._arr]; }
+    removeAtIndex(index) { this._arr.splice(index, 1); }
+
+    clearChildren()    { this._ch = {}; this._arr = []; }
+    getChildrenCount() { return this._type === 'array' ? this._arr.length : Object.keys(this._ch).length; }
+
+    pushValue(value)        { this._arr.push(new Variable(value)); this._type = 'array'; }
+    pushVariableCopy(other) { this._arr.push(other.clone());       this._type = 'array'; }
+
+    clone() {
+      const c = new Variable(this._v);
+      c._type = this._type;
+      for (const [k, v] of Object.entries(this._ch)) c._ch[k] = v.clone();
+      c._arr = this._arr.map(v => v.clone());
+      return c;
+    }
+
+    toString() { return String(this._v); }
+  }
+
+  class VariablesContainer {
+    constructor() { this._vars = {}; }
+    get(name) {
+      if (!this._vars[name]) this._vars[name] = new Variable();
+      return this._vars[name];
+    }
+    has(name)    { return Object.prototype.hasOwnProperty.call(this._vars, name); }
+    remove(name) { delete this._vars[name]; }
+    _seed(name, value, type = null) {
+      const v = new Variable();
+      const t = type ?? (typeof value === 'boolean' ? 'boolean' : typeof value === 'number' ? 'number' : 'string');
+      if (t === 'boolean')     v.setBoolean(value === true || value === 'true');
+      else if (t === 'number') v.setNumber(Number(value));
+      else                     v.setString(String(value));
+      this._vars[name] = v;
+    }
+    _snapshot() {
+      return Object.entries(this._vars).map(([k, v]) => {
+        if (v._type === 'structure') return `${k}={struct}`;
+        if (v._type === 'array')    return `${k}=[${v._arr.length}]`;
+        return `${k}=${v.getValue()}`;
+      });
+    }
+  }
+
+  class TimeManager {
+    constructor() { this._timers = {}; }
+    getElapsedTime(inMs) { return inMs ? 16.67 : 0.01667; }
+    hasTimer(name)     { return Object.prototype.hasOwnProperty.call(this._timers, name); }
+    addTimer(name)     { this._timers[name] = { elapsed: 0, paused: false }; }
+    getTimer(name)     { return this._timers[name]?.elapsed ?? 0; }
+    resetTimer(name)   { if (this._timers[name]) this._timers[name].elapsed = 0; }
+    pauseTimer(name)   { if (this._timers[name]) this._timers[name].paused = true; }
+    unpauseTimer(name) { if (this._timers[name]) this._timers[name].paused = false; }
+    removeTimer(name)  { delete this._timers[name]; }
+  }
+
+  class RuntimeGame {
+    constructor() { this._vars = new VariablesContainer(); }
+    getVariables()            { return this._vars; }
+    getVariable(name)         { return this._vars.get(name); }
+    hasVariable(name)         { return this._vars.has(name); }
+    getGameResolutionWidth()  { return 800; }
+    getGameResolutionHeight() { return 600; }
+  }
+
+  class RuntimeObject {
+    constructor(scene, cfg = {}) {
+      this._scene   = scene;
+      this._name    = String(cfg.name    ?? 'Object');
+      this._x       = Number(cfg.x       ?? 0);
+      this._y       = Number(cfg.y       ?? 0);
+      this._width   = Number(cfg.width   ?? 32);
+      this._height  = Number(cfg.height  ?? 32);
+      this._origW   = this._width;
+      this._origH   = this._height;
+      this._angle   = Number(cfg.angle   ?? 0);
+      this._opacity = Number(cfg.opacity ?? 255);
+      this._hidden  = cfg.visible === false;
+      this._layer   = String(cfg.layer   ?? '');
+      this._zOrder  = Number(cfg.zOrder  ?? 0);
+      this._vars    = new VariablesContainer();
+      this._timers  = {};
+      this._forces  = { x: 0, y: 0 };
+
+      if (cfg.variables) {
+        for (const [k, v] of Object.entries(cfg.variables)) this._vars._seed(k, v);
+      }
+    }
+
+    getName()              { return this._name; }
+    getRuntimeScene()      { return this._scene; }
+    getInstanceContainer() { return this._scene; }
+    getElapsedTime()       { return 16.67; }
+
+    getX()             { return this._x; }
+    getY()             { return this._y; }
+    setX(x)            { this._x = Number(x); }
+    setY(y)            { this._y = Number(y); }
+    setPosition(x, y)  { this._x = Number(x); this._y = Number(y); }
+    getDrawableX()     { return this._x; }
+    getDrawableY()     { return this._y; }
+
+    getCenterX()                    { return this._width  / 2; }
+    getCenterY()                    { return this._height / 2; }
+    getCenterXInScene()             { return this._x + this._width  / 2; }
+    getCenterYInScene()             { return this._y + this._height / 2; }
+    setCenterXInScene(x)            { this._x = Number(x) - this._width  / 2; }
+    setCenterYInScene(y)            { this._y = Number(y) - this._height / 2; }
+    setCenterPositionInScene(x, y)  { this.setCenterXInScene(x); this.setCenterYInScene(y); }
+
+    getWidth()           { return this._width; }
+    getHeight()          { return this._height; }
+    setWidth(w)          { this._width  = Number(w); }
+    setHeight(h)         { this._height = Number(h); }
+    getOriginalWidth()   { return this._origW; }
+    getOriginalHeight()  { return this._origH; }
+
+    getAngle()  { return this._angle; }
+    setAngle(a) { this._angle = Number(a); }
+    rotate(speed) { this._angle += Number(speed); }
+    rotateTowardAngle(angle, speed) {
+      const diff = ((Number(angle) - this._angle + 540) % 360) - 180;
+      this._angle += Math.sign(diff) * Math.min(Math.abs(diff), Math.abs(Number(speed)));
+    }
+    rotateTowardPosition(x, y, speed) { this.rotateTowardAngle(this.getAngleToPosition(x, y), speed); }
+    rotateTowardObject(target, speed)  { if (target) this.rotateTowardAngle(this.getAngleToObject(target), speed); }
+
+    getAngleToObject(other) {
+      return Math.atan2(other.getY() - this._y, other.getX() - this._x) * 180 / Math.PI;
+    }
+    getAngleToPosition(x, y) {
+      return Math.atan2(Number(y) - this._y, Number(x) - this._x) * 180 / Math.PI;
+    }
+    getXFromAngleAndDistance(angle, dist) {
+      return this._x + Math.cos(Number(angle) * Math.PI / 180) * Number(dist);
+    }
+    getYFromAngleAndDistance(angle, dist) {
+      return this._y + Math.sin(Number(angle) * Math.PI / 180) * Number(dist);
+    }
+    getDistanceToObject(other)   { return Math.sqrt(this.getSqDistanceToObject(other)); }
+    getDistanceToPosition(x, y)  { return Math.sqrt(this.getSqDistanceToPosition(x, y)); }
+    getSqDistanceToObject(other) {
+      const dx = this._x - other.getX(), dy = this._y - other.getY();
+      return dx * dx + dy * dy;
+    }
+    getSqDistanceToPosition(x, y) {
+      const dx = this._x - Number(x), dy = this._y - Number(y);
+      return dx * dx + dy * dy;
+    }
+
+    putAround(x, y, distance, angleInDegrees) {
+      const r = Number(angleInDegrees) * Math.PI / 180;
+      this._x = Number(x) + Math.cos(r) * Number(distance);
+      this._y = Number(y) + Math.sin(r) * Number(distance);
+    }
+    putAroundObject(obj, distance, angleInDegrees) {
+      if (obj) this.putAround(obj.getX(), obj.getY(), distance, angleInDegrees);
+    }
+
+    hide(enable = true) { this._hidden = Boolean(enable); }
+    show()              { this._hidden = false; }
+    isHidden()          { return this._hidden; }
+    isVisible()         { return !this._hidden; }
+
+    getLayer()      { return this._layer; }
+    setLayer(layer) { this._layer = String(layer); }
+    isOnLayer(name) { return this._layer === name; }
+    getZOrder()     { return this._zOrder; }
+    setZOrder(z)    { this._zOrder = Number(z); }
+
+    getOpacity()  { return this._opacity; }
+    setOpacity(o) { this._opacity = Math.max(0, Math.min(255, Number(o))); }
+
+    getAABBLeft()    { return this._x; }
+    getAABBRight()   { return this._x + this._width; }
+    getAABBTop()     { return this._y; }
+    getAABBBottom()  { return this._y + this._height; }
+    getAABBCenterX() { return this._x + this._width  / 2; }
+    getAABBCenterY() { return this._y + this._height / 2; }
+    getAABB() {
+      return { min: [this.getAABBLeft(), this.getAABBTop()], max: [this.getAABBRight(), this.getAABBBottom()] };
+    }
+
+    getVariables()    { return this._vars; }
+    getVariable(name) { return this._vars.get(name); }
+    hasVariable(name) { return this._vars.has(name); }
+    getVariableNumber(v)        { return v.getAsNumber(); }
+    getVariableString(v)        { return v.getAsString(); }
+    getVariableBoolean(v, cmp)  { return v.getAsBoolean() === cmp; }
+    setVariableNumber(v, n)     { v.setNumber(n); }
+    setVariableString(v, s)     { v.setString(s); }
+    setVariableBoolean(v, b)    { v.setBoolean(b); }
+    toggleVariableBoolean(v)    { v.toggle(); }
+    returnVariable(v)           { return v; }
+
+    resetTimer(name) {
+      if (!this._timers[name]) this._timers[name] = { elapsed: 0, paused: false };
+      else this._timers[name].elapsed = 0;
+    }
+    pauseTimer(name)   { if (this._timers[name]) this._timers[name].paused = true; }
+    unpauseTimer(name) { if (this._timers[name]) this._timers[name].paused = false; }
+    removeTimer(name)  { delete this._timers[name]; }
+    timerElapsedTime(name)                    { return this._timers[name]?.elapsed ?? NaN; }
+    timerPaused(name)                         { return this._timers[name]?.paused  ?? false; }
+    getTimerElapsedTimeInSeconds(name)        { return this._timers[name] ? this._timers[name].elapsed / 1000 : 0; }
+    getTimerElapsedTimeInSecondsOrNaN(name)   { return this._timers[name] ? this._timers[name].elapsed / 1000 : NaN; }
+
+    addForce(x, y)               { this._forces.x += Number(x); this._forces.y += Number(y); }
+    addPolarForce(angle, len) {
+      const r = Number(angle) * Math.PI / 180;
+      this._forces.x += Math.cos(r) * Number(len);
+      this._forces.y += Math.sin(r) * Number(len);
+    }
+    addForceTowardPosition(x, y, len) { this.addPolarForce(this.getAngleToPosition(x, y), len); }
+    addForceTowardObject(obj, len)    { if (obj) this.addForceTowardPosition(obj.getX(), obj.getY(), len); }
+    clearForces()  { this._forces = { x: 0, y: 0 }; }
+    hasNoForces()  { return this._forces.x === 0 && this._forces.y === 0; }
+    getAverageForce() { return this._forces; }
+
+    hasBehavior()     { return false; }
+    getBehavior()     { return null; }
+    activateBehavior() {}
+    behaviorActivated() { return false; }
+
+    deleteFromScene() {
+      if (!this._scene) return;
+      const list = this._scene._byName[this._name];
+      if (list) { const i = list.indexOf(this); if (i !== -1) list.splice(i, 1); }
+    }
+
+    toString() { return `[RuntimeObject "${this._name}" x=${this._x} y=${this._y}]`; }
+  }
+
+  class RuntimeScene {
+    constructor(cfg = {}, game = null) {
+      this._byName  = {};
+      this._vars    = new VariablesContainer();
+      this._timeMgr = new TimeManager();
+      this._game    = game ?? new RuntimeGame();
+      this._name    = String(cfg.name ?? 'Scene');
+    }
+
+    _addObject(cfg) {
+      const obj = new RuntimeObject(this, cfg);
+      if (!this._byName[cfg.name]) this._byName[cfg.name] = [];
+      this._byName[cfg.name].push(obj);
+      return obj;
+    }
+
+    getObjects(name)                { return this._byName[name] ?? []; }
+    getInstancesOf(name)            { return this.getObjects(name); }
+    getAllObjects()                  { return Object.values(this._byName).flat(); }
+    getAdhocListOfAllInstances()    { return this.getAllObjects(); }
+    getInstancesCountOnScene(name)  { return (this._byName[name] ?? []).length; }
+    createObject(name)              { return this._addObject({ name }); }
+    addObject(obj) {
+      const n = obj.getName();
+      if (!this._byName[n]) this._byName[n] = [];
+      this._byName[n].push(obj);
+    }
+
+    getVariables()    { return this._vars; }
+    getVariable(name) { return this._vars.get(name); }
+    hasVariable(name) { return this._vars.has(name); }
+
+    getTimeManager() { return this._timeMgr; }
+    getElapsedTime() { return 16.67; }
+
+    hasTimer(name)    { return this._timeMgr.hasTimer(name); }
+    addTimer(name)    { this._timeMgr.addTimer(name); }
+    getTimer(name)    { return this._timeMgr.getTimer(name); }
+    resetTimer(name)  { this._timeMgr.resetTimer(name); }
+    removeTimer(name) { this._timeMgr.removeTimer(name); }
+
+    getLayer(name)  { return { isVisible: () => true, getName: () => name ?? '' }; }
+    hasLayer(name)  { return name === '' || name === 'base layer'; }
+
+    getViewportWidth()   { return 800; }
+    getViewportHeight()  { return 600; }
+    getViewportOriginX() { return 0; }
+    getViewportOriginY() { return 0; }
+
+    getGame()  { return this._game; }
+    getName()  { return this._name; }
+    getScene() { return this; }
+
+    toString() { return `[RuntimeScene "${this._name}"]`; }
+  }
+
+  return { Variable, VariablesContainer, TimeManager, RuntimeObject, RuntimeScene, RuntimeGame };
+})();
+
+// ─────────────────────────────────────────────
+// App state
+// ─────────────────────────────────────────────
+let objects    = [];
+let sceneVars  = [];
+let globalVars = [];
+let fnArgs     = [];
+let uid = 1;
+const newId  = () => uid++;
+const newVar = (k = '', v = '0', t = 'number') => ({ id: newId(), k, v, t });
+
+const STATE_KEY   = 'gdjs-sandbox-state';
+const EDITOR_KEY  = 'gdjs-sandbox-editor';
+const PROJECT_KEY = 'gdjs-sandbox-project';
+
+function saveState() {
+  try {
+    localStorage.setItem(STATE_KEY, JSON.stringify({ objects, sceneVars, globalVars, fnArgs, uid }));
+  } catch {}
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STATE_KEY);
+    if (!raw) return false;
+    const s = JSON.parse(raw);
+    objects    = s.objects    || [];
+    sceneVars  = s.sceneVars  || [];
+    globalVars = s.globalVars || [];
+    fnArgs     = s.fnArgs     || [];
+    uid        = s.uid        || 1;
+    return true;
+  } catch { return false; }
+}
+
+function saveProject(filename, project, sceneIdx) {
+  try {
+    localStorage.setItem(PROJECT_KEY, JSON.stringify({ filename, project, sceneIdx }));
+  } catch(e) {
+    // project JSON may be too large for some browsers' quota
+    console.warn('Could not save project to localStorage:', e.message);
+  }
+}
+
+function restoreProjectPicker() {
+  try {
+    const raw = localStorage.getItem(PROJECT_KEY);
+    if (!raw) return;
+    const { filename, project, sceneIdx } = JSON.parse(raw);
+    gdProject = project;
+    document.getElementById('gd-filename').textContent = filename;
+    const sel = document.getElementById('gd-scene-select');
+    sel.innerHTML = '';
+    for (const [i, layout] of (gdProject.layouts || []).entries()) {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = layout.name;
+      sel.appendChild(opt);
+    }
+    if (sceneIdx != null) sel.value = sceneIdx;
+    document.getElementById('scene-picker-bar').style.display = 'flex';
+  } catch {}
+}
+
+// ─────────────────────────────────────────────
+// Rendering helpers
+// ─────────────────────────────────────────────
+const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const isContainer = t => t === 'structure' || t === 'array';
+
+function typeSelect(v, extraAttrs) {
+  const labels = { number: '123', string: 'abc', boolean: 'T/F', structure: '{ }', array: '[ ]' };
+  const opts = Object.entries(labels).map(([t, label]) =>
+    `<option value="${t}" ${v.t === t ? 'selected' : ''}>${label}</option>`
+  ).join('');
+  return `<select class="vtype" ${extraAttrs}>${opts}</select>`;
+}
+
+function renderObjects() {
+  const el = document.getElementById('objects-list');
+  saveState();
+  if (!objects.length) { el.innerHTML = '<div class="empty-hint">No objects — click + Add</div>'; return; }
+  el.innerHTML = objects.map(o => `
+    <div class="obj-card" data-oid="${o.id}">
+      <div class="obj-card-header">
+        <span class="obj-label">${esc(o.name) || '(unnamed)'}</span>
+        <button class="icon-btn" data-del-obj="${o.id}" title="Remove">×</button>
+      </div>
+      <div class="obj-body">
+        <div class="fields-grid">
+          <div class="field span2">
+            <label>Name</label>
+            <input data-obj="${o.id}" data-f="name" value="${esc(o.name)}">
+          </div>
+          <div class="field"><label>X</label><input type="number" data-obj="${o.id}" data-f="x" value="${o.x}"></div>
+          <div class="field"><label>Y</label><input type="number" data-obj="${o.id}" data-f="y" value="${o.y}"></div>
+          <div class="field"><label>Width</label><input type="number" data-obj="${o.id}" data-f="width" value="${o.width}"></div>
+          <div class="field"><label>Height</label><input type="number" data-obj="${o.id}" data-f="height" value="${o.height}"></div>
+          <div class="field"><label>Angle</label><input type="number" data-obj="${o.id}" data-f="angle" value="${o.angle}"></div>
+          <div class="field"><label>Opacity (0-255)</label><input type="number" data-obj="${o.id}" data-f="opacity" value="${o.opacity}" min="0" max="255"></div>
+        </div>
+        <div class="vars-header">
+          Object Variables
+          <button data-addvar="${o.id}" title="Add variable">+</button>
+        </div>
+        <div id="ovars-${o.id}">
+          ${o.vars.map(v => {
+            const ct = isContainer(v.t);
+            const dj = v.t === 'structure' ? '{}' : '[]';
+            const jv = (!v.v || v.v === '0') ? dj : v.v;
+            return `
+            <div class="var-row ${ct ? 'var-row-container' : ''}">
+              <div class="var-row-top">
+                ${typeSelect(v, `data-vt="${v.id}" data-vobj="${o.id}"`)}
+                <input class="vname" placeholder="name" data-vk="${v.id}" data-vobj="${o.id}" value="${esc(v.k)}">
+                ${!ct ? `<input class="vval" placeholder="value" data-vv="${v.id}" data-vobj="${o.id}" value="${esc(v.v)}">` : ''}
+                <button class="icon-btn" data-del-var="${v.id}" data-vobj="${o.id}">×</button>
+              </div>
+              ${ct ? `<textarea class="vjson" data-vv="${v.id}" data-vobj="${o.id}" placeholder="${esc(dj)}">${esc(jv)}</textarea>` : ''}
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function varRows(vars, keyAttr, valAttr, typeAttr, delAttr, extraData = '') {
+  return vars.map(v => {
+    const ct = isContainer(v.t);
+    const dj = v.t === 'structure' ? '{}' : '[]';
+    const jv = (!v.v || v.v === '0') ? dj : v.v;
+    return `
+    <div class="var-row ${ct ? 'var-row-container' : ''}">
+      <div class="var-row-top">
+        ${typeSelect(v, `${typeAttr}="${v.id}" ${extraData}`)}
+        <input class="vname" placeholder="name" ${keyAttr}="${v.id}" ${extraData} value="${esc(v.k)}">
+        ${!ct ? `<input class="vval" placeholder="value" ${valAttr}="${v.id}" ${extraData} value="${esc(v.v)}">` : ''}
+        <button class="icon-btn" ${delAttr}="${v.id}" ${extraData}>×</button>
+      </div>
+      ${ct ? `<textarea class="vjson" ${valAttr}="${v.id}" ${extraData} placeholder="${esc(dj)}">${esc(jv)}</textarea>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function renderSceneVars() {
+  document.getElementById('scene-vars-list').innerHTML =
+    varRows(sceneVars, 'data-svk', 'data-svv', 'data-svt', 'data-del-sv');
+  saveState();
+}
+
+function renderGlobalVars() {
+  document.getElementById('global-vars-list').innerHTML =
+    varRows(globalVars, 'data-gvk', 'data-gvv', 'data-gvt', 'data-del-gv');
+  saveState();
+}
+
+function renderFnArgs() {
+  document.getElementById('fn-args-list').innerHTML =
+    varRows(fnArgs, 'data-fak', 'data-fav', 'data-fat', 'data-del-fa');
+  saveState();
+}
+
+// ─────────────────────────────────────────────
+// Event delegation — objects
+// ─────────────────────────────────────────────
+document.getElementById('add-obj-btn').addEventListener('click', () => {
+  objects.push({ id: newId(), name: 'Object', x: 0, y: 0, width: 32, height: 32, angle: 0, opacity: 255, vars: [] });
+  renderObjects();
+});
+
+document.getElementById('objects-list').addEventListener('click', e => {
+  const delObj = e.target.dataset.delObj;
+  if (delObj) { objects = objects.filter(o => o.id != delObj); renderObjects(); return; }
+
+  const addVar = e.target.dataset.addvar;
+  if (addVar) {
+    const o = objects.find(o => o.id == addVar);
+    if (o) { o.vars.push(newVar()); renderObjects(); }
+    return;
+  }
+
+  const delVar = e.target.dataset.delVar;
+  const delVobj = e.target.dataset.vobj;
+  if (delVar && delVobj) {
+    const o = objects.find(o => o.id == delVobj);
+    if (o) { o.vars = o.vars.filter(v => v.id != delVar); renderObjects(); }
+  }
+});
+
+document.getElementById('objects-list').addEventListener('input', e => {
+  const oid = e.target.dataset.obj, field = e.target.dataset.f;
+  if (oid && field) {
+    const o = objects.find(o => o.id == oid);
+    if (o) {
+      o[field] = field === 'name' ? e.target.value : Number(e.target.value);
+      if (field === 'name') {
+        const label = e.target.closest('.obj-card')?.querySelector('.obj-label');
+        if (label) label.textContent = e.target.value || '(unnamed)';
+      }
+    }
+    return;
+  }
+  const vobj = e.target.dataset.vobj;
+  const vk = e.target.dataset.vk;
+  if (vk && vobj) {
+    const o = objects.find(o => o.id == vobj);
+    if (o) { const v = o.vars.find(v => v.id == vk); if (v) v.k = e.target.value; }
+    return;
+  }
+  const vv = e.target.dataset.vv;
+  if (vv && vobj) {
+    const o = objects.find(o => o.id == vobj);
+    if (o) { const v = o.vars.find(v => v.id == vv); if (v) v.v = e.target.value; }
+  }
+  saveState();
+});
+
+document.getElementById('objects-list').addEventListener('change', e => {
+  const vtId = e.target.dataset.vt, vobj = e.target.dataset.vobj;
+  if (vtId && vobj) {
+    const o = objects.find(o => o.id == vobj);
+    if (o) {
+      const v = o.vars.find(v => v.id == vtId);
+      if (v) {
+        const wasContainer = isContainer(v.t);
+        v.t = e.target.value;
+        if (wasContainer !== isContainer(v.t)) {
+          v.v = isContainer(v.t) ? (v.t === 'structure' ? '{}' : '[]') : '0';
+          renderObjects();
+        }
+      }
+    }
+  }
+});
+
+// ─────────────────────────────────────────────
+// Event delegation — scene vars
+// ─────────────────────────────────────────────
+document.getElementById('add-scene-var').addEventListener('click', () => { sceneVars.push(newVar()); renderSceneVars(); });
+
+document.getElementById('scene-vars-list').addEventListener('click', e => {
+  const id = e.target.dataset.delSv;
+  if (id) { sceneVars = sceneVars.filter(v => v.id != id); renderSceneVars(); }
+});
+
+document.getElementById('scene-vars-list').addEventListener('input', e => {
+  const svk = e.target.dataset.svk;
+  if (svk) { const v = sceneVars.find(v => v.id == svk); if (v) v.k = e.target.value; return; }
+  const svv = e.target.dataset.svv;
+  if (svv) { const v = sceneVars.find(v => v.id == svv); if (v) v.v = e.target.value; }
+});
+
+document.getElementById('scene-vars-list').addEventListener('change', e => {
+  const svt = e.target.dataset.svt;
+  if (svt) {
+    const v = sceneVars.find(v => v.id == svt);
+    if (v) {
+      const wasContainer = isContainer(v.t);
+      v.t = e.target.value;
+      if (wasContainer !== isContainer(v.t)) {
+        v.v = isContainer(v.t) ? (v.t === 'structure' ? '{}' : '[]') : '0';
+        renderSceneVars();
+      }
+    }
+  }
+});
+
+// ─────────────────────────────────────────────
+// Event delegation — global vars
+// ─────────────────────────────────────────────
+document.getElementById('add-global-var').addEventListener('click', () => { globalVars.push(newVar()); renderGlobalVars(); });
+
+document.getElementById('global-vars-list').addEventListener('click', e => {
+  const id = e.target.dataset.delGv;
+  if (id) { globalVars = globalVars.filter(v => v.id != id); renderGlobalVars(); }
+});
+
+document.getElementById('global-vars-list').addEventListener('input', e => {
+  const gvk = e.target.dataset.gvk;
+  if (gvk) { const v = globalVars.find(v => v.id == gvk); if (v) v.k = e.target.value; return; }
+  const gvv = e.target.dataset.gvv;
+  if (gvv) { const v = globalVars.find(v => v.id == gvv); if (v) v.v = e.target.value; }
+});
+
+document.getElementById('global-vars-list').addEventListener('change', e => {
+  const gvt = e.target.dataset.gvt;
+  if (gvt) {
+    const v = globalVars.find(v => v.id == gvt);
+    if (v) {
+      const wasContainer = isContainer(v.t);
+      v.t = e.target.value;
+      if (wasContainer !== isContainer(v.t)) {
+        v.v = isContainer(v.t) ? (v.t === 'structure' ? '{}' : '[]') : '0';
+        renderGlobalVars();
+      }
+    }
+  }
+});
+
+document.getElementById('add-fn-arg').addEventListener('click', () => { fnArgs.push(newVar('', '0', 'number')); renderFnArgs(); });
+
+document.getElementById('fn-args-list').addEventListener('click', e => {
+  const id = e.target.dataset.delFa;
+  if (id) { fnArgs = fnArgs.filter(v => v.id != id); renderFnArgs(); }
+});
+
+document.getElementById('fn-args-list').addEventListener('input', e => {
+  const fak = e.target.dataset.fak;
+  if (fak) { const v = fnArgs.find(v => v.id == fak); if (v) v.k = e.target.value; return; }
+  const fav = e.target.dataset.fav;
+  if (fav) { const v = fnArgs.find(v => v.id == fav); if (v) v.v = e.target.value; }
+});
+
+document.getElementById('fn-args-list').addEventListener('change', e => {
+  const fat = e.target.dataset.fat;
+  if (fat) {
+    const v = fnArgs.find(v => v.id == fat);
+    if (v) {
+      const wasContainer = isContainer(v.t);
+      v.t = e.target.value;
+      if (wasContainer !== isContainer(v.t)) {
+        v.v = isContainer(v.t) ? (v.t === 'structure' ? '{}' : '[]') : '0';
+        renderFnArgs();
+      }
+      saveState();
+    }
+  }
+});
+
+// ─────────────────────────────────────────────
+// Console
+// ─────────────────────────────────────────────
+document.getElementById('clear-btn').addEventListener('click', clearConsole);
+
+function clearConsole() {
+  document.getElementById('console-out').innerHTML = '';
+  document.getElementById('state-out').innerHTML = '';
+}
+
+function varToPlain(v) {
+  if (v._type === 'structure') {
+    const obj = {};
+    for (const [k, child] of Object.entries(v._ch)) obj[k] = varToPlain(child);
+    return obj;
+  }
+  if (v._type === 'array') return v._arr.map(child => varToPlain(child));
+  return v.getValue();
+}
+
+function serialize(a) {
+  if (a === null)      return 'null';
+  if (a === undefined) return 'undefined';
+  if (a instanceof gdjs.Variable) {
+    const plain = varToPlain(a);
+    return typeof plain === 'object' ? JSON.stringify(plain, null, 2) : String(plain);
+  }
+  if (typeof a === 'object') { try { return JSON.stringify(a, null, 2); } catch { return String(a); } }
+  return String(a);
+}
+
+function appendLine(cls, tag, args) {
+  const out = document.getElementById('console-out');
+  const line = document.createElement('div');
+  line.className = cls;
+  if (tag) {
+    const t = document.createElement('span');
+    t.className = `c-tag c-tag-${tag}`;
+    t.textContent = tag.toUpperCase();
+    line.appendChild(t);
+  }
+  line.appendChild(document.createTextNode(args.map(serialize).join(' ')));
+  out.appendChild(line);
+  out.scrollTop = out.scrollHeight;
+}
+
+function appendDivider(text) {
+  const out = document.getElementById('console-out');
+  const el = document.createElement('div');
+  el.className = 'c-dim';
+  el.style.marginTop = '4px';
+  el.textContent = `── ${text} ──`;
+  out.appendChild(el);
+}
+
+// ─────────────────────────────────────────────
+// Run
+// ─────────────────────────────────────────────
+document.getElementById('run-btn').addEventListener('click', run);
+
+function seedVariableFromJson(variable, value) {
+  if (Array.isArray(value)) {
+    variable._type = 'array';
+    value.forEach((item, i) => seedVariableFromJson(variable.getChildAt(i), item));
+  } else if (value !== null && typeof value === 'object') {
+    variable._type = 'structure';
+    for (const [k, child] of Object.entries(value)) seedVariableFromJson(variable.getChildNamed(k), child);
+  } else if (typeof value === 'boolean') {
+    variable.setBoolean(value);
+  } else if (typeof value === 'number') {
+    variable.setNumber(value);
+  } else {
+    variable.setString(String(value ?? ''));
+  }
+}
+
+function seedVar(container, v) {
+  if (isContainer(v.t)) {
+    try {
+      seedVariableFromJson(container.get(v.k), JSON.parse(v.v || (v.t === 'structure' ? '{}' : '[]')));
+    } catch(e) {
+      appendLine('c-warn', 'warn', [`var "${v.k}": invalid JSON — ${e.message}`]);
+    }
+  } else {
+    container._seed(v.k, v.v, v.t);
+  }
+}
+
+function buildScene() {
+  const game = new gdjs.RuntimeGame();
+  for (const v of globalVars.filter(v => v.k)) seedVar(game.getVariables(), v);
+
+  const scene = new gdjs.RuntimeScene({}, game);
+  for (const v of sceneVars.filter(v => v.k)) seedVar(scene.getVariables(), v);
+
+  for (const o of objects) {
+    const obj = scene._addObject({
+      name: o.name, x: o.x, y: o.y,
+      width: o.width, height: o.height,
+      angle: o.angle, opacity: o.opacity,
+    });
+    for (const v of o.vars.filter(v => v.k)) seedVar(obj.getVariables(), v);
+  }
+  return scene;
+}
+
+function run() {
+  clearConsole();
+  const scene = buildScene();
+
+  const orig = { log: console.log, warn: console.warn, error: console.error };
+  console.log   = (...a) => { orig.log(...a);   appendLine('c-log',   'log',   a); };
+  console.warn  = (...a) => { orig.warn(...a);  appendLine('c-warn',  'warn',  a); };
+  console.error = (...a) => { orig.error(...a); appendLine('c-error', 'error', a); };
+
+  const _fnArgCache = {};
+  const eventsFunctionContext = {
+    getArgument(name) {
+      if (_fnArgCache[name]) return _fnArgCache[name];
+      const arg = fnArgs.find(a => a.k === name);
+      const v = new gdjs.Variable();
+      if (arg) {
+        if (isContainer(arg.t)) {
+          try { seedVariableFromJson(v, JSON.parse(arg.v || (arg.t === 'structure' ? '{}' : '[]'))); } catch {}
+        } else {
+          const val = arg.t === 'number' ? Number(arg.v) : arg.t === 'boolean' ? (arg.v === 'true') : String(arg.v);
+          v._v = val; v._type = arg.t;
+        }
+      }
+      _fnArgCache[name] = v;
+      return v;
+    },
+    returnValue: new gdjs.Variable(),
+  };
+
+  try {
+    // eslint-disable-next-line no-new-func
+    new Function('runtimeScene', 'gdjs', 'eventsFunctionContext', editor.getValue())(scene, gdjs, eventsFunctionContext);
+    dumpState(scene);
+  } catch (err) {
+    appendLine('c-error', 'error', [err.message]);
+  } finally {
+    Object.assign(console, orig);
+  }
+}
+
+function dumpState(scene) {
+  const objs  = scene.getAllObjects();
+  const svars = scene.getVariables()._snapshot();
+  const gvars = scene.getGame().getVariables()._snapshot();
+  const out   = document.getElementById('state-out');
+  out.innerHTML = '';
+
+  if (!objs.length && !svars.length && !gvars.length) {
+    const el = document.createElement('div');
+    el.className = 'c-dim';
+    el.textContent = 'No state changes.';
+    out.appendChild(el);
+    return;
+  }
+
+  for (const o of objs) {
+    const vars = o.getVariables()._snapshot();
+    const line = document.createElement('div');
+    line.className = 'c-info';
+    line.style.fontSize = '11px';
+    let text = `${o.getName()}  x=${o.getX()} y=${o.getY()} angle=${o.getAngle()} opacity=${o.getOpacity()} visible=${o.isVisible()}`;
+    if (vars.length) text += `  vars: ${vars.join(', ')}`;
+    line.textContent = text;
+    out.appendChild(line);
+  }
+
+  if (svars.length) {
+    const line = document.createElement('div');
+    line.style.cssText = 'font-size: 13px;color:#c586c0;margin-top:4px';
+    line.textContent = `scene: ${svars.join(', ')}`;
+    out.appendChild(line);
+  }
+
+  if (gvars.length) {
+    const line = document.createElement('div');
+    line.style.cssText = 'font-size: 13px;color:#ce9178';
+    line.textContent = `global: ${gvars.join(', ')}`;
+    out.appendChild(line);
+  }
+
+  out.scrollTop = 9999;
+}
+
+// ─────────────────────────────────────────────
+// Load game.json
+// ─────────────────────────────────────────────
+let gdProject = null;
+
+document.getElementById('load-json-btn').addEventListener('click', () => {
+  document.getElementById('gd-file-input').click();
+});
+
+document.getElementById('gd-file-input').addEventListener('change', async e => {
+  const files = Array.from(e.target.files);
+  e.target.value = '';
+  if (!files.length) return;
+
+  // The first path segment is the folder name the user selected.
+  // Root-level files have exactly 2 segments: folderName/file.json
+  const depth = p => p.webkitRelativePath.split('/').length;
+  const rootJsons = files.filter(f => depth(f) === 2 && f.name.endsWith('.json'));
+
+  const mainFile = rootJsons.find(f => f.name === 'game.json') || rootJsons[0];
+  if (!mainFile) {
+    alert('No .json project file found in the selected folder.');
+    return;
+  }
+
+  let project;
+  try {
+    project = JSON.parse(await mainFile.text());
+  } catch(err) {
+    alert('Could not parse JSON: ' + err.message);
+    return;
+  }
+
+  // Folder projects store each layout as a separate file in layouts/
+  if (project.properties?.folderProject) {
+    const layoutFiles = files.filter(f => {
+      const parts = f.webkitRelativePath.split('/');
+      return parts.length === 3 && parts[1] === 'layouts' && f.name.endsWith('.json');
+    });
+    const layouts = [];
+    for (const lf of layoutFiles) {
+      try { layouts.push(JSON.parse(await lf.text())); } catch {}
+    }
+    project.layouts = layouts;
+  }
+
+  gdProject = project;
+  document.getElementById('gd-filename').textContent = mainFile.name;
+
+  const sel = document.getElementById('gd-scene-select');
+  sel.innerHTML = '';
+  for (const [i, layout] of (gdProject.layouts || []).entries()) {
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = layout.name;
+    sel.appendChild(opt);
+  }
+
+  document.getElementById('scene-picker-bar').style.display = 'flex';
+  saveProject(mainFile.name, gdProject, 0);
+});
+
+document.getElementById('gd-scene-select').addEventListener('change', () => {
+  if (gdProject) saveProject(
+    document.getElementById('gd-filename').textContent,
+    gdProject,
+    Number(document.getElementById('gd-scene-select').value)
+  );
+});
+
+document.getElementById('gd-import-btn').addEventListener('click', () => {
+  if (!gdProject) return;
+
+  const sceneIdx = Number(document.getElementById('gd-scene-select').value);
+  const layout   = (gdProject.layouts || [])[sceneIdx];
+  if (!layout) return;
+
+  // Global vars
+  globalVars = (gdProject.variables || []).map(gdToAppVar);
+
+  // Scene vars
+  sceneVars = (layout.variables || []).map(gdToAppVar);
+
+  // Build first-instance map for position/size
+  const instMap = {};
+  for (const inst of (layout.instances || [])) {
+    if (!instMap[inst.name]) instMap[inst.name] = inst;
+  }
+
+  // Scene objects then global objects (scene wins on name clash)
+  const seen = new Set();
+  objects = [];
+  for (const gdObj of [...(layout.objects || []), ...(gdProject.objects || [])]) {
+    if (seen.has(gdObj.name)) continue;
+    seen.add(gdObj.name);
+    const inst = instMap[gdObj.name];
+    objects.push({
+      id:      newId(),
+      name:    gdObj.name,
+      x:       inst ? inst.x : 0,
+      y:       inst ? inst.y : 0,
+      width:   (inst?.customSize && inst.width)  ? inst.width  : 32,
+      height:  (inst?.customSize && inst.height) ? inst.height : 32,
+      angle:   inst ? (inst.angle || 0) : 0,
+      opacity: 255,
+      vars:    (gdObj.variables || []).map(gdToAppVar),
+    });
+  }
+
+  renderObjects();
+  renderSceneVars();
+  renderGlobalVars();
+
+  const status = document.getElementById('gd-status');
+  status.textContent =
+    `✓ ${objects.length} objects · ${sceneVars.length} scene vars · ${globalVars.length} global vars`;
+  setTimeout(() => status.textContent = '', 4000);
+});
+
+// Convert a GDevelop variable JSON node to our app's { id, k, v, t } format.
+function gdToAppVar(gdVar) {
+  const t = gdVar.type || (typeof gdVar.value === 'number' ? 'number' : 'string');
+  if (t === 'structure' || t === 'array') {
+    return newVar(gdVar.name || '', JSON.stringify(gdNodeToJsonValue(gdVar)), t);
+  }
+  const raw = gdVar.value ?? 0;
+  return newVar(gdVar.name || '', String(raw), t);
+}
+
+// Recursively convert a GDevelop variable node to a plain JS value.
+function gdNodeToJsonValue(gdVar) {
+  const t = gdVar.type || 'number';
+  if (t === 'structure') {
+    const obj = {};
+    for (const c of (gdVar.children || [])) obj[c.name] = gdNodeToJsonValue(c);
+    return obj;
+  }
+  if (t === 'array') {
+    return (gdVar.children || [])
+      .slice()
+      .sort((a, b) => Number(a.name) - Number(b.name))
+      .map(c => gdNodeToJsonValue(c));
+  }
+  if (t === 'boolean') return gdVar.value === true || gdVar.value === 'true';
+  if (t === 'number')  return Number(gdVar.value ?? 0);
+  return String(gdVar.value ?? '');
+}
+
+// ─────────────────────────────────────────────
+// AI Panel
+// ─────────────────────────────────────────────
+const AI_KEY      = 'gdjs-sandbox-claude-key';
+const AI_MODE_KEY        = 'gdjs-sandbox-ai-mode';
+const AI_AUTO_INSERT_KEY = 'gdjs-sandbox-ai-auto-insert';
+
+const aiPanel      = document.getElementById('ai-panel');
+const aiToggleBtn  = document.getElementById('ai-toggle-btn');
+const aiMessages   = document.getElementById('ai-messages');
+const aiKeyInput   = document.getElementById('ai-key-input');
+const aiKeyEntry   = document.getElementById('ai-key-entry');
+const aiKeySavedRow = document.getElementById('ai-key-saved-row');
+
+// Toggle panel open/closed
+aiToggleBtn.addEventListener('click', () => {
+  const isOpen = aiPanel.classList.toggle('open');
+  aiToggleBtn.classList.toggle('active', isOpen);
+  setTimeout(() => editor?.layout(), 160);
+});
+
+// Mode switching (proxy vs api key)
+function aiMode() { return localStorage.getItem(AI_MODE_KEY) || 'proxy'; }
+
+function refreshModeUI() {
+  const mode = aiMode();
+  document.getElementById('ai-mode-proxy').classList.toggle('active', mode === 'proxy');
+  document.getElementById('ai-mode-api').classList.toggle('active', mode === 'api');
+  document.getElementById('ai-proxy-section').style.display = mode === 'proxy' ? 'block' : 'none';
+  document.getElementById('ai-key-section').style.display   = mode === 'api'   ? 'block' : 'none';
+}
+
+document.getElementById('ai-mode-proxy').addEventListener('click', () => {
+  localStorage.setItem(AI_MODE_KEY, 'proxy');
+  refreshModeUI();
+});
+document.getElementById('ai-mode-api').addEventListener('click', () => {
+  localStorage.setItem(AI_MODE_KEY, 'api');
+  refreshModeUI();
+});
+
+// API key management
+function refreshKeyUI() {
+  const key = localStorage.getItem(AI_KEY) || '';
+  if (key) {
+    aiKeyEntry.style.display = 'none';
+    aiKeySavedRow.style.display = 'flex';
+  } else {
+    aiKeyEntry.style.display = 'block';
+    aiKeySavedRow.style.display = 'none';
+  }
+}
+
+document.getElementById('ai-key-save-btn').addEventListener('click', () => {
+  const key = aiKeyInput.value.trim();
+  if (!key) return;
+  localStorage.setItem(AI_KEY, key);
+  aiKeyInput.value = '';
+  refreshKeyUI();
+});
+
+document.getElementById('ai-key-change-btn').addEventListener('click', () => {
+  aiKeyEntry.style.display = 'block';
+  aiKeySavedRow.style.display = 'none';
+  aiKeyInput.focus();
+});
+
+refreshModeUI();
+refreshKeyUI();
+
+const aiAutoInsert = document.getElementById('ai-auto-insert');
+aiAutoInsert.checked = localStorage.getItem(AI_AUTO_INSERT_KEY) === '1';
+aiAutoInsert.addEventListener('change', () => {
+  localStorage.setItem(AI_AUTO_INSERT_KEY, aiAutoInsert.checked ? '1' : '0');
+});
+
+// Insert code into editor preserving undo
+function stripFences(text) {
+  return text.replace(/^```[\w]*\n?/m, '').replace(/\n?```\s*$/m, '').trim();
+}
+
+function insertEditorCode(code) {
+  if (!editor) return;
+  const pos = editor.getPosition();
+  editor.executeEdits('ai', [{
+    range: new monaco.Range(pos.lineNumber, pos.column, pos.lineNumber, pos.column),
+    text: code,
+    forceMoveMarkers: true,
+  }]);
+  editor.focus();
+}
+
+function replaceEditorCode(code) {
+  if (!editor) return;
+  const model = editor.getModel();
+  editor.executeEdits('ai', [{
+    range: model.getFullModelRange(),
+    text: code,
+    forceMoveMarkers: true,
+  }]);
+  editor.focus();
+}
+
+// Append a message bubble to the messages area
+function appendBubble(role, text) {
+  const wrap = document.createElement('div');
+  wrap.className = `ai-msg ${role}`;
+
+  const label = document.createElement('div');
+  label.className = 'ai-msg-label';
+  label.textContent = role === 'user' ? 'You' : 'Claude';
+  wrap.appendChild(label);
+
+  const body = document.createElement('div');
+  body.className = 'ai-msg-body';
+  body.textContent = text;
+  wrap.appendChild(body);
+
+  aiMessages.appendChild(wrap);
+  aiMessages.scrollTop = aiMessages.scrollHeight;
+  return body;
+}
+
+function appendActionRow(wrap, getText) {
+  const row = document.createElement('div');
+  row.className = 'ai-msg-actions';
+
+  function makeBtn(label, action) {
+    const btn = document.createElement('button');
+    btn.textContent = label;
+    btn.addEventListener('click', () => {
+      action(stripFences(getText()));
+      btn.textContent = '✓ Done';
+      btn.className = 'done';
+      setTimeout(() => { btn.textContent = label; btn.className = ''; }, 2000);
+    });
+    row.appendChild(btn);
+  }
+
+  makeBtn('Insert at cursor', insertEditorCode);
+  makeBtn('Replace all', replaceEditorCode);
+
+  const copyBtn = document.createElement('button');
+  copyBtn.textContent = 'Copy';
+  copyBtn.addEventListener('click', () => {
+    navigator.clipboard?.writeText(stripFences(getText())).then(() => {
+      copyBtn.textContent = '✓ Copied';
+      setTimeout(() => copyBtn.textContent = 'Copy', 2000);
+    });
+  });
+  row.appendChild(copyBtn);
+
+  wrap.appendChild(row);
+}
+
+const AI_SYSTEM = `You are an expert GDevelop GDJS developer. The user is writing JavaScript snippets in a GDJS sandbox.
+
+Variables always in scope:
+- \`runtimeScene\` — gdjs.RuntimeScene (the current scene)
+- \`gdjs\` — the GDJS namespace
+
+Essential APIs:
+  runtimeScene.getObjects("Name")               → RuntimeObject[]
+  runtimeScene.getVariables().get("name")       → Variable  (scene variable)
+  runtimeScene.getGame().getVariables().get("name") → Variable  (global variable)
+  obj.getX() / obj.getY() / obj.setX(x) / obj.setY(y) / obj.setPosition(x,y)
+  obj.getAngle() / obj.setAngle(a) / obj.rotate(speed)
+  obj.getWidth() / obj.getHeight() / obj.setWidth(w) / obj.setHeight(h)
+  obj.getOpacity() / obj.setOpacity(o)  — 0–255
+  obj.isVisible() / obj.hide() / obj.show()
+  obj.getDistanceToObject(other) / obj.getDistanceToPosition(x,y)
+  obj.getAngleToPosition(x,y) / obj.getAngleToObject(other)
+  obj.addForce(x,y) / obj.addPolarForce(angle, length)
+  obj.addForceTowardPosition(x,y,len) / obj.addForceTowardObject(other,len)
+  obj.getCenterXInScene() / obj.getCenterYInScene()
+  obj.getVariable("name") → Variable
+  obj.deleteFromScene()
+  variable.getAsNumber() / variable.getAsString() / variable.getAsBoolean()
+  variable.setNumber(n) / variable.setString(s) / variable.setBoolean(b)
+  variable.add(n) / variable.sub(n) / variable.mul(n) / variable.div(n)
+  variable.concatenateString(s) / variable.toggle()
+  variable.getChild("key") / variable.getChildAt(index)
+  variable.pushValue(v) / variable.getChildrenCount()
+
+Use console.log() to print values. Output ONLY raw JavaScript — no markdown fences, no explanations unless explicitly asked. The code is inserted directly into the editor.
+
+When the user asks you to edit, modify, fix, or add to existing code, return the COMPLETE updated file — not just the changed lines.`;
+
+async function sendToAI() {
+  const promptEl = document.getElementById('ai-prompt');
+  const sendBtn  = document.getElementById('ai-send-btn');
+  const modelSel = document.getElementById('ai-model-select');
+  const userText = promptEl.value.trim();
+  if (!userText) return;
+
+  const mode = aiMode();
+  if (mode === 'api') {
+    const apiKey = localStorage.getItem(AI_KEY) || aiKeyInput.value.trim();
+    if (!apiKey) { alert('Enter and save your Anthropic API key first.'); return; }
+  }
+
+  const currentCode = editor ? editor.getValue().trim() : '';
+  const fullPrompt = currentCode
+    ? `Current editor code:\n\`\`\`js\n${currentCode}\n\`\`\`\n\nUser request: ${userText}`
+    : userText;
+
+  promptEl.value = '';
+  sendBtn.disabled = true;
+  sendBtn.textContent = 'Generating…';
+  appendBubble('user', userText);
+
+  const aiWrap = document.createElement('div');
+  aiWrap.className = 'ai-msg ai';
+  const aiLabel = document.createElement('div');
+  aiLabel.className = 'ai-msg-label';
+  aiLabel.textContent = 'Claude';
+  aiWrap.appendChild(aiLabel);
+  const aiBody = document.createElement('div');
+  aiBody.className = 'ai-msg-body';
+  aiBody.textContent = '▋';
+  aiWrap.appendChild(aiBody);
+  aiMessages.appendChild(aiWrap);
+  aiMessages.scrollTop = aiMessages.scrollHeight;
+
+  let fullText = '';
+
+  try {
+    if (mode === 'proxy') {
+      // ── Claude Code proxy (streaming plain text) ──
+      const resp = await fetch('http://127.0.0.1:3001', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ system: AI_SYSTEM, prompt: fullPrompt }),
+      });
+      if (!resp.ok) throw new Error(`Proxy HTTP ${resp.status}`);
+      fullText = await resp.text();
+
+    } else {
+      // ── Direct Anthropic API (SSE streaming) ──
+      const apiKey = localStorage.getItem(AI_KEY) || aiKeyInput.value.trim();
+      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify({
+          model: modelSel.value,
+          max_tokens: 2048,
+          system: AI_SYSTEM,
+          stream: true,
+          messages: [{ role: 'user', content: fullPrompt }],
+        }),
+      });
+      if (!resp.ok) {
+        let msg; try { msg = (await resp.json()).error?.message; } catch {}
+        throw new Error(msg || `HTTP ${resp.status}`);
+      }
+
+      const reader  = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        const lines = buf.split('\n');
+        buf = lines.pop();
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const data = line.slice(6).trim();
+          if (data === '[DONE]') continue;
+          try {
+            const ev = JSON.parse(data);
+            if (ev.type === 'content_block_delta' && ev.delta?.type === 'text_delta') {
+              fullText += ev.delta.text;
+              aiBody.textContent = fullText + '▋';
+              aiMessages.scrollTop = aiMessages.scrollHeight;
+            }
+          } catch {}
+        }
+      }
+    }
+
+    aiBody.textContent = fullText;
+    if (aiAutoInsert.checked) {
+      replaceEditorCode(stripFences(fullText));
+      const note = document.createElement('div');
+      note.className = 'ai-msg-actions';
+      note.style.color = '#4ec9b0';
+      note.style.fontSize = '10px';
+      note.textContent = '✓ Auto-inserted into editor';
+      aiWrap.appendChild(note);
+    } else {
+      appendActionRow(aiWrap, () => fullText);
+    }
+
+  } catch (err) {
+    let msg = err.message || String(err);
+    if (mode === 'proxy' && /fetch|network|ECONNREFUSED/i.test(msg)) {
+      msg = 'Could not reach proxy on port 3001.\nStart it with: node gdjs-sandbox/proxy.js';
+    } else if (/fetch|network|cors/i.test(msg)) {
+      msg += '\n\nTip: serve from localhost:\n  python3 -m http.server 8080';
+    }
+    aiBody.style.color = '#f48771';
+    aiBody.textContent = 'Error: ' + msg;
+  }
+
+  sendBtn.disabled = false;
+  sendBtn.textContent = 'Generate';
+  aiMessages.scrollTop = aiMessages.scrollHeight;
+}
+
+document.getElementById('ai-send-btn').addEventListener('click', sendToAI);
+document.getElementById('ai-prompt').addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); sendToAI(); }
+});
+
+// ─────────────────────────────────────────────
+// Monaco + GDJS type definitions
+// ─────────────────────────────────────────────
+const GDJS_TYPES = `
+interface GdjsVariable {
+  getAsNumber(): number;
+  getAsString(): string;
+  getAsBoolean(): boolean;
+  getValue(): any;
+  getType(): string;
+  isPrimitive(): boolean;
+  setNumber(n: number): void;
+  setString(s: string): void;
+  setBoolean(b: boolean): void;
+  setValue(v: any): void;
+  add(n: number): void;
+  sub(n: number): void;
+  mul(n: number): void;
+  div(n: number): void;
+  concatenateString(s: string): void;
+  toggle(): void;
+  getChild(nameOrIndex: string | number): GdjsVariable;
+  getChildNamed(name: string): GdjsVariable;
+  addChild(name: string, child: GdjsVariable): this;
+  hasChild(name: string): boolean;
+  removeChild(name: string): void;
+  getAllChildren(): Record<string, GdjsVariable>;
+  getChildAt(index: number): GdjsVariable;
+  getAllChildrenArray(): GdjsVariable[];
+  removeAtIndex(index: number): void;
+  clearChildren(): void;
+  getChildrenCount(): number;
+  pushValue(value: any): void;
+  pushVariableCopy(other: GdjsVariable): void;
+  clone(): GdjsVariable;
+}
+
+interface GdjsVariablesContainer {
+  get(name: string): GdjsVariable;
+  has(name: string): boolean;
+  remove(name: string): void;
+}
+
+interface GdjsLayer {
+  isVisible(): boolean;
+  getName(): string;
+}
+
+interface GdjsTimeManager {
+  getElapsedTime(inMs?: boolean): number;
+  hasTimer(name: string): boolean;
+  addTimer(name: string): void;
+  getTimer(name: string): number;
+  resetTimer(name: string): void;
+  pauseTimer(name: string): void;
+  unpauseTimer(name: string): void;
+  removeTimer(name: string): void;
+}
+
+interface GdjsRuntimeObject {
+  getName(): string;
+  getRuntimeScene(): GdjsRuntimeScene;
+  getInstanceContainer(): GdjsRuntimeScene;
+  getElapsedTime(): number;
+  getX(): number;
+  getY(): number;
+  setX(x: number): void;
+  setY(y: number): void;
+  setPosition(x: number, y: number): void;
+  getDrawableX(): number;
+  getDrawableY(): number;
+  getCenterX(): number;
+  getCenterY(): number;
+  getCenterXInScene(): number;
+  getCenterYInScene(): number;
+  setCenterXInScene(x: number): void;
+  setCenterYInScene(y: number): void;
+  setCenterPositionInScene(x: number, y: number): void;
+  getWidth(): number;
+  getHeight(): number;
+  setWidth(w: number): void;
+  setHeight(h: number): void;
+  getOriginalWidth(): number;
+  getOriginalHeight(): number;
+  getAngle(): number;
+  setAngle(a: number): void;
+  rotate(speed: number): void;
+  rotateTowardAngle(angle: number, speed: number): void;
+  rotateTowardPosition(x: number, y: number, speed: number): void;
+  rotateTowardObject(target: GdjsRuntimeObject, speed: number): void;
+  getAngleToObject(other: GdjsRuntimeObject): number;
+  getAngleToPosition(x: number, y: number): number;
+  getXFromAngleAndDistance(angle: number, dist: number): number;
+  getYFromAngleAndDistance(angle: number, dist: number): number;
+  getDistanceToObject(other: GdjsRuntimeObject): number;
+  getDistanceToPosition(x: number, y: number): number;
+  getSqDistanceToObject(other: GdjsRuntimeObject): number;
+  getSqDistanceToPosition(x: number, y: number): number;
+  putAround(x: number, y: number, distance: number, angleInDegrees: number): void;
+  putAroundObject(obj: GdjsRuntimeObject, distance: number, angleInDegrees: number): void;
+  hide(enable?: boolean): void;
+  show(): void;
+  isHidden(): boolean;
+  isVisible(): boolean;
+  getLayer(): string;
+  setLayer(layer: string): void;
+  isOnLayer(name: string): boolean;
+  getZOrder(): number;
+  setZOrder(z: number): void;
+  getOpacity(): number;
+  setOpacity(o: number): void;
+  getAABBLeft(): number;
+  getAABBRight(): number;
+  getAABBTop(): number;
+  getAABBBottom(): number;
+  getAABBCenterX(): number;
+  getAABBCenterY(): number;
+  getAABB(): { min: [number, number]; max: [number, number] };
+  getVariables(): GdjsVariablesContainer;
+  getVariable(name: string): GdjsVariable;
+  hasVariable(name: string): boolean;
+  getVariableNumber(v: GdjsVariable): number;
+  getVariableString(v: GdjsVariable): string;
+  setVariableNumber(v: GdjsVariable, n: number): void;
+  setVariableString(v: GdjsVariable, s: string): void;
+  setVariableBoolean(v: GdjsVariable, b: boolean): void;
+  toggleVariableBoolean(v: GdjsVariable): void;
+  resetTimer(name: string): void;
+  pauseTimer(name: string): void;
+  unpauseTimer(name: string): void;
+  removeTimer(name: string): void;
+  timerElapsedTime(name: string): number;
+  timerPaused(name: string): boolean;
+  getTimerElapsedTimeInSeconds(name: string): number;
+  getTimerElapsedTimeInSecondsOrNaN(name: string): number;
+  addForce(x: number, y: number): void;
+  addPolarForce(angle: number, len: number): void;
+  addForceTowardPosition(x: number, y: number, len: number): void;
+  addForceTowardObject(obj: GdjsRuntimeObject, len: number): void;
+  clearForces(): void;
+  hasNoForces(): boolean;
+  hasBehavior(name: string): boolean;
+  getBehavior(name: string): any;
+  deleteFromScene(): void;
+}
+
+interface GdjsRuntimeScene {
+  getObjects(name: string): GdjsRuntimeObject[];
+  getInstancesOf(name: string): GdjsRuntimeObject[];
+  getAllObjects(): GdjsRuntimeObject[];
+  getAdhocListOfAllInstances(): GdjsRuntimeObject[];
+  getInstancesCountOnScene(name: string): number;
+  createObject(name: string): GdjsRuntimeObject;
+  getVariables(): GdjsVariablesContainer;
+  getVariable(name: string): GdjsVariable;
+  hasVariable(name: string): boolean;
+  getTimeManager(): GdjsTimeManager;
+  getElapsedTime(): number;
+  hasTimer(name: string): boolean;
+  addTimer(name: string): void;
+  getTimer(name: string): number;
+  resetTimer(name: string): void;
+  removeTimer(name: string): void;
+  getLayer(name: string): GdjsLayer;
+  hasLayer(name: string): boolean;
+  getViewportWidth(): number;
+  getViewportHeight(): number;
+  getViewportOriginX(): number;
+  getViewportOriginY(): number;
+  getGame(): GdjsRuntimeGame;
+  getName(): string;
+  getScene(): GdjsRuntimeScene;
+}
+
+interface GdjsRuntimeGame {
+  getVariables(): GdjsVariablesContainer;
+  getVariable(name: string): GdjsVariable;
+  hasVariable(name: string): boolean;
+  getGameResolutionWidth(): number;
+  getGameResolutionHeight(): number;
+}
+
+declare const runtimeScene: GdjsRuntimeScene;
+declare const eventsFunctionContext: {
+  getArgument(name: string): GdjsVariable;
+  returnValue: GdjsVariable;
+};
+declare const gdjs: {
+  Variable: new (value?: any) => GdjsVariable;
+  VariablesContainer: new () => GdjsVariablesContainer;
+  RuntimeObject: new (scene: GdjsRuntimeScene, cfg?: any) => GdjsRuntimeObject;
+  RuntimeScene: new (cfg?: any, game?: GdjsRuntimeGame) => GdjsRuntimeScene;
+  RuntimeGame: new () => GdjsRuntimeGame;
+  TimeManager: new () => GdjsTimeManager;
+};
+`;
+
+const DEFAULT_CODE = `// runtimeScene and gdjs are available in scope.
+// Global vars:  runtimeScene.getGame().getVariables()
+// Scene vars:   runtimeScene.getVariables()
+// Object vars:  object.getVariables()
+// Ctrl+Enter to run.
+
+const players = runtimeScene.getObjects("Player");
+
+players.forEach(player => {
+  const hp = player.getVariable("health").getAsNumber();
+  console.log(\`\${player.getName()} HP: \${hp}  pos: (\${player.getX()}, \${player.getY()})\`);
+
+  player.setX(player.getX() + 50);
+  player.getVariable("health").setNumber(hp - 10);
+});
+`;
+
+require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs' } });
+require(['vs/editor/editor.main'], () => {
+  monaco.languages.typescript.javascriptDefaults.addExtraLib(GDJS_TYPES, 'gdjs-types.d.ts');
+  monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
+    target: monaco.languages.typescript.ScriptTarget.ES2020,
+    allowNonTsExtensions: true,
+    noLib: false,
+    checkJs: true,
+  });
+
+  const savedCode = localStorage.getItem(EDITOR_KEY);
+  editor = monaco.editor.create(document.getElementById('editor-container'), {
+    value: savedCode ?? DEFAULT_CODE,
+    language: 'javascript',
+    theme: 'vs-dark',
+    fontSize: 16,
+    fontFamily: "'Cascadia Code', 'Fira Code', 'Consolas', 'Courier New', monospace",
+    minimap: { enabled: false },
+    scrollBeyondLastLine: false,
+    lineNumbersMinChars: 3,
+    padding: { top: 12, bottom: 8 },
+    renderLineHighlight: 'line',
+    suggest: { showWords: false },
+  });
+
+  let saveEditorTimer;
+  editor.onDidChangeModelContent(() => {
+    clearTimeout(saveEditorTimer);
+    saveEditorTimer = setTimeout(() => {
+      localStorage.setItem(EDITOR_KEY, editor.getValue());
+    }, 500);
+  });
+
+  new ResizeObserver(() => editor.layout())
+    .observe(document.getElementById('editor-container'));
+
+  editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, run);
+  monaco.editor.setTheme(THEMES[localStorage.getItem(THEME_KEY) || 'dark']?.monaco ?? 'vs-dark');
+});
+
+// ─────────────────────────────────────────────
+// Resize handles
+// ─────────────────────────────────────────────
+(function() {
+  function makeDrag(handle, onMove, onDone) {
+    handle.addEventListener('mousedown', e => {
+      e.preventDefault();
+      handle.classList.add('dragging');
+      const startX = e.clientX, startY = e.clientY;
+      const move = e2 => onMove(e2.clientX - startX, e2.clientY - startY, e2);
+      const up = () => {
+        handle.classList.remove('dragging');
+        document.removeEventListener('mousemove', move);
+        document.removeEventListener('mouseup', up);
+        if (onDone) onDone();
+      };
+      document.addEventListener('mousemove', move);
+      document.addEventListener('mouseup', up);
+    });
+  }
+
+  // Console vertical resize
+  const consoleHandle = document.getElementById('console-resize-handle');
+  const consolePanel  = consoleHandle.nextElementSibling;
+  let startH;
+  consoleHandle.addEventListener('mousedown', () => { startH = consolePanel.offsetHeight; });
+  makeDrag(consoleHandle, (dx, dy) => {
+    const newH = Math.max(40, Math.min(startH - dy, window.innerHeight - 120));
+    consolePanel.style.height = newH + 'px';
+    if (typeof editor !== 'undefined' && editor) editor.layout();
+  });
+
+  // AI panel horizontal resize
+  const aiHandle = document.getElementById('ai-resize-handle');
+  const aiPanel  = document.getElementById('ai-panel');
+  let startW;
+  aiHandle.addEventListener('mousedown', () => { startW = aiPanel.offsetWidth; });
+  makeDrag(aiHandle, (dx) => {
+    if (!aiPanel.classList.contains('open')) return;
+    const newW = Math.max(200, Math.min(startW - dx, window.innerWidth - 300));
+    aiPanel.style.width = newW + 'px';
+    if (typeof editor !== 'undefined' && editor) editor.layout();
+  });
+})();
+
+// ─────────────────────────────────────────────
+// View tabs
+// ─────────────────────────────────────────────
+document.querySelectorAll('.view-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.view-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('view-' + tab.dataset.view).classList.add('active');
+    if (tab.dataset.view === 'code') setTimeout(() => editor && editor.layout(), 50);
+  });
+});
+
+// ─────────────────────────────────────────────
+// Initial render
+// ─────────────────────────────────────────────
+if (!loadState()) {
+  objects.push({
+    id: newId(), name: 'Player',
+    x: 100, y: 200, width: 32, height: 48,
+    angle: 0, opacity: 255,
+    vars: [newVar('health', '100', 'number')],
+  });
+}
+restoreProjectPicker();
+renderObjects();
+renderSceneVars();
+renderGlobalVars();
+renderFnArgs();
+</script>
+</body>
+</html>
