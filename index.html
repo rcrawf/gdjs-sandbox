@@ -117,7 +117,7 @@
     #run-btn:hover { background: var(--accent-hover); }
     #run-btn:active { background: var(--accent-active); }
 
-    #ai-toggle-btn {
+    #ai-toggle-btn, #format-btn {
       background: var(--bg4);
       color: #9cdcfe;
       border: 1px solid var(--border);
@@ -127,8 +127,9 @@
       font-weight: 600;
       cursor: pointer;
     }
-    #ai-toggle-btn:hover { background: #3a3a3a; }
+    #ai-toggle-btn:hover, #format-btn:hover { background: #3a3a3a; }
     #ai-toggle-btn.active { background: var(--accent-bg); border-color: var(--accent); color: var(--accent); }
+    #format-btn { color: #ce9178; }
 
     #theme-select {
       background: var(--bg4);
@@ -905,6 +906,7 @@
   <select id="theme-select" title="Color theme"></select>
   <button id="load-json-btn">📂 Load project</button>
   <input type="file" id="gd-file-input" webkitdirectory style="display:none">
+  <button id="format-btn" title="Format code (Alt+Shift+F)">⇥ Format</button>
   <button id="ai-toggle-btn">✦ AI</button>
   <button id="run-btn">▶  Run</button>
 </header>
@@ -1837,6 +1839,10 @@ function appendDivider(text) {
 // Run
 // ─────────────────────────────────────────────
 document.getElementById('run-btn').addEventListener('click', run);
+
+document.getElementById('format-btn').addEventListener('click', () => {
+  if (editor) editor.getAction('editor.action.formatDocument').run();
+});
 
 function seedVariableFromJson(variable, value) {
   if (Array.isArray(value)) {
