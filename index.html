@@ -2279,7 +2279,7 @@ function appendActionRow(wrap, getText) {
   wrap.appendChild(row);
 }
 
-const AI_SYSTEM = `You are an expert GDevelop GDJS developer. The user is writing JavaScript snippets in a GDJS sandbox.
+const AI_SYSTEM = `You are an expert GDevelop GDJS developer. The user is writing JavaScript snippets in a GDJS sandbox. When a scene event sheet is provided in the context, use it to understand the existing game logic, object names, variable names, and event structure before writing code.
 
 Variables always in scope:
 - \`runtimeScene\` — gdjs.RuntimeScene (the current scene)
@@ -2326,8 +2326,21 @@ async function sendToAI() {
   }
 
   const currentCode = editor ? editor.getValue().trim() : '';
-  const fullPrompt = currentCode
-    ? `Current editor code:\n\`\`\`js\n${currentCode}\n\`\`\`\n\nUser request: ${userText}`
+
+  const contextParts = [];
+  if (currentCode) {
+    contextParts.push(`Current editor code:\n\`\`\`js\n${currentCode}\n\`\`\``);
+  }
+  if (gdProject) {
+    const sceneIdx = Number(document.getElementById('gd-scene-select').value);
+    const layout = (gdProject.layouts || [])[sceneIdx];
+    if (layout && layout.events && layout.events.length) {
+      contextParts.push(`Scene event sheet for "${layout.name}" (GDevelop JSON):\n\`\`\`json\n${JSON.stringify(layout.events, null, 2)}\n\`\`\``);
+    }
+  }
+
+  const fullPrompt = contextParts.length
+    ? `${contextParts.join('\n\n')}\n\nUser request: ${userText}`
     : userText;
 
   promptEl.value = '';

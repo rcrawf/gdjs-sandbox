@@ -35,7 +35,8 @@ class Handler(BaseHTTPRequestHandler):
 
         try:
             result = subprocess.run(
-                ['claude', '-p', full_prompt],
+                ['claude', '-p', '-'],
+                input=full_prompt.encode(),
                 capture_output=True,
             )
             output = result.stdout
